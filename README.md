@@ -88,11 +88,52 @@ for _, link := range result.Links {
 | `A11y()` | `mintlify a11y` | `A11yResult` |
 | `OpenAPICheck()` | `mintlify openapi-check [target]` | `OpenAPICheckResult` |
 | `StartDev()` | `mintlify dev [--port N]` | `*DevServer` |
+| `StartContainerDev()` | `docker run ... mintlify dev` | `*ContainerDevServer` |
 | `MigrateMDX()` | `mintlify migrate-mdx` | `string` |
 | `Scrape()` | `mintlify scrape <mode> [target]` | `string` |
 | `NewProject()` | `mintlify new [dir]` | `string` |
 | `Rename()` | `mintlify rename` | `string` |
 | `Upgrade()` | `mintlify upgrade` | `string` |
+
+## Container mode (Docker/Podman)
+
+Run commands inside containers for hermetic, reproducible previews — no local Node.js required.
+
+### One-shot commands in containers
+
+```go
+cmdFunc, err := mintlify.ContainerCommandFunc(mintlify.ContainerConfig{
+    Image: "node:22-slim",
+})
+
+client, _ := mintlify.New("./docs",
+    mintlify.WithRunner(&mintlify.Runner{Name: "container", Cmd: "unused"}),
+    mintlify.WithCommandFunc(cmdFunc),
+)
+
+// All commands now run inside the container
+result, _ := client.Validate(ctx, mintlify.ValidateOptions{})
+```
+
+### Dev server in a container
+
+```go
+server, err := client.StartContainerDev(ctx, mintlify.DevOptions{Port: 3333}, mintlify.ContainerConfig{
+    Image: "node:22-slim",
+})
+defer server.Stop()
+
+server.WaitReady(ctx)
+fmt.Printf("Preview at %s (container: %s)\n", server.URL(), server.ContainerName())
+```
+
+### Runtime detection
+
+The SDK auto-detects `podman` (preferred — rootless by default) or `docker`:
+
+```go
+rt := mintlify.DetectRuntime() // "podman", "docker", or ""
+```
 
 ## Runner detection
 
