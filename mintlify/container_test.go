@@ -43,14 +43,17 @@ func TestContainerCommandFunc_Integration(t *testing.T) {
 	}
 }
 
-func TestContainerCommandFunc_NoRuntime(t *testing.T) {
+func TestContainerCommandFunc_ExplicitRuntime(t *testing.T) {
+	// An explicit Runtime is trusted at factory time (validation happens at exec).
 	cfg := ContainerConfig{Runtime: "nonexistent-runtime"}
-	_, err := ContainerCommandFunc(cfg)
-	// This should not error on the factory call itself since we set Runtime
-	// explicitly. The error would come at exec time.
-	// But if Runtime is empty and nothing is on PATH, it should error.
+	cmdFunc, err := ContainerCommandFunc(cfg)
 	if err != nil {
-		t.Logf("ContainerCommandFunc() error (expected if no runtime): %v", err)
+		t.Fatalf("ContainerCommandFunc() should not error with explicit Runtime: %v", err)
+	}
+	// Actually executing should fail since the binary doesn't exist.
+	_, _, _, execErr := cmdFunc(context.Background(), t.TempDir(), "", "echo", "test")
+	if execErr == nil {
+		t.Error("expected exec error for nonexistent runtime")
 	}
 }
 

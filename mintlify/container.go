@@ -125,9 +125,7 @@ func (c *Client) StartContainerDev(ctx context.Context, opts DevOptions, cfg Con
 	image := cfg.image()
 	name := fmt.Sprintf("mintlify-dev-%d", port)
 
-	// Build the full command args for the runner.
-	mintArgs := c.buildArgs("dev", "--port", fmt.Sprintf("%d", port))
-
+	// Inside the container, use "mintlify" directly — no runner prefix needed.
 	containerArgs := []string{
 		"run", "--rm",
 		"--name", name,
@@ -135,8 +133,8 @@ func (c *Client) StartContainerDev(ctx context.Context, opts DevOptions, cfg Con
 		"-w", "/workspace",
 		"-p", fmt.Sprintf("%d:%d", port, port),
 		image,
+		"npx", "mintlify", "dev", "--port", fmt.Sprintf("%d", port),
 	}
-	containerArgs = append(containerArgs, mintArgs...)
 
 	proc, err := process.Start(ctx, rt, containerArgs, "", nil)
 	if err != nil {
