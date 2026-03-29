@@ -162,3 +162,85 @@ func (c *Client) Upgrade(ctx context.Context) (string, error) {
 	}
 	return strings.TrimSpace(stdout), nil
 }
+
+// Export runs `mintlify export` and returns the result.
+func (c *Client) Export(ctx context.Context, opts ExportOptions) (*ExportResult, error) {
+	args := []string{"export"}
+	if opts.Format != "" {
+		args = append(args, "--format", string(opts.Format))
+	}
+	if opts.OutputDir != "" {
+		args = append(args, "--output", opts.OutputDir)
+	}
+	for _, page := range opts.Pages {
+		args = append(args, "--page", page)
+	}
+	stdout, _, err := c.run(ctx, args...)
+	if err != nil {
+		return nil, fmt.Errorf("mintlify export: %w", err)
+	}
+	raw := strings.TrimSpace(stdout)
+	return &ExportResult{
+		OutputPath: parseExportPath(raw),
+		Raw:        raw,
+	}, nil
+}
+
+// Workflow runs `mintlify workflow` subcommands.
+func (c *Client) Workflow(ctx context.Context, opts WorkflowOptions) (*WorkflowResult, error) {
+	args := []string{"workflow"}
+	if opts.Action != "" {
+		args = append(args, string(opts.Action))
+	}
+	if opts.Name != "" {
+		args = append(args, "--name", opts.Name)
+	}
+	if opts.TriggerType != "" {
+		args = append(args, "--trigger", opts.TriggerType)
+	}
+	if opts.CronExpr != "" {
+		args = append(args, "--cron", opts.CronExpr)
+	}
+	if opts.Instructions != "" {
+		args = append(args, "--instructions", opts.Instructions)
+	}
+	if opts.Dir != "" {
+		args = append(args, "--dir", opts.Dir)
+	}
+	stdout, _, err := c.run(ctx, args...)
+	if err != nil {
+		return nil, fmt.Errorf("mintlify workflow: %w", err)
+	}
+	raw := strings.TrimSpace(stdout)
+	return &WorkflowResult{
+		FilePath: parseWorkflowPath(raw),
+		Raw:      raw,
+	}, nil
+}
+
+// SkillsAdd runs `mintlify skills add <name>` and returns the result.
+func (c *Client) SkillsAdd(ctx context.Context, opts SkillsAddOptions) (*SkillsResult, error) {
+	args := []string{"skills", "add"}
+	if opts.Name != "" {
+		args = append(args, opts.Name)
+	}
+	stdout, _, err := c.run(ctx, args...)
+	if err != nil {
+		return nil, fmt.Errorf("mintlify skills add: %w", err)
+	}
+	raw := strings.TrimSpace(stdout)
+	return &SkillsResult{
+		Name: opts.Name,
+		Path: parseSkillPath(raw),
+		Raw:  raw,
+	}, nil
+}
+
+// Install runs `mintlify install` and returns the raw output.
+func (c *Client) Install(ctx context.Context) (string, error) {
+	stdout, _, err := c.run(ctx, "install")
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(stdout), nil
+}

@@ -120,3 +120,36 @@ func parseBuild(raw string) *BuildResult {
 
 	return result
 }
+
+// exportPathRe matches output like "Exported to /path/to/output" or "Created /path/to/file.pdf".
+var exportPathRe = regexp.MustCompile(`(?m)(?:Exported to|Created|Output:)\s+(.+)$`)
+
+// parseExportPath extracts the output path from export command output.
+func parseExportPath(raw string) string {
+	if m := exportPathRe.FindStringSubmatch(raw); m != nil {
+		return strings.TrimSpace(m[1])
+	}
+	return ""
+}
+
+// workflowPathRe matches output like "Created .mintlify/workflows/name.yaml".
+var workflowPathRe = regexp.MustCompile(`(?m)(?:Created|Wrote)\s+(.+\.ya?ml)`)
+
+// parseWorkflowPath extracts the workflow file path from output.
+func parseWorkflowPath(raw string) string {
+	if m := workflowPathRe.FindStringSubmatch(raw); m != nil {
+		return strings.TrimSpace(m[1])
+	}
+	return ""
+}
+
+// skillPathRe matches output like "Added skill.md" or "Created skill.md at /path".
+var skillPathRe = regexp.MustCompile(`(?m)(?:Added|Created|Installed)\s+(.+\.md)`)
+
+// parseSkillPath extracts the skill file path from output.
+func parseSkillPath(raw string) string {
+	if m := skillPathRe.FindStringSubmatch(raw); m != nil {
+		return strings.TrimSpace(m[1])
+	}
+	return ""
+}
